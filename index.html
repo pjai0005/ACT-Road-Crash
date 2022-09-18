@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <title>Australia map</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="data/sankey.js"></script>
+
+    <script src="graphs/map.js"></script>
+    <script src="graphs/line.js"></script>
+    <script src="graphs/heatmap.js"></script>
+    <script src="graphs/sankey.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+            background-color: #FFF4E8;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            font-weight: 300;
+        }
+
+        h1 {
+            text-align: center;
+            color: #507e65;
+            font-weight: bold;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            font-size: 60px;
+        }
+
+        p {
+            text-align: left;
+            color: #15231b;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            font-size: 20px;
+        }
+
+        #container {
+            margin-top: 50px;
+            padding: 5px 50px 10px 50px;
+        }
+
+        .tooltip {
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            pointer-events: none;
+            position: absolute;
+            max-width: 8em;
+            text-align: center;
+            font-size: 20px;
+            background: white;
+            border-style: solid;
+            border-width: 2px;
+            border-color: black;
+            background-color: rgb(255,255,255);
+            border-radius: 7px;
+        }
+
+        .node rect {
+            cursor: move;
+            fill-opacity: .9;
+            shape-rendering: crispEdges;
+        }
+
+        .node text {
+            pointer-events: none;
+            text-shadow: 0 1px 0 #fff;
+        }
+
+        .link {
+            fill: none;
+            stroke: #000;
+            stroke-opacity: .2;
+        }
+
+        .link:hover {
+            stroke-opacity: .5;
+        }
+
+        .center {
+            margin: auto;
+            width: 50%;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Frequency Of Road Accidents In ACT</h1>
+    <hr style="margin-left: 300px; margin-right: 300px; stroke-width: 20px;">
+    <hr style="margin-left: 300px; margin-right: 300px; stroke-width: 20px;">
+
+
+    <p style="top: 450px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+        In a country as vast as Australia, driving is an essential part of life. Driving
+        here is not a luxury but a necessity. The number of individuals killed or
+        wounded in road accidents in Australia was always a concern for which the
+        government imposed a set of strict road safety rules and regulations. Due to
+        such directives, road accidents have seen quite a noticeable fall in the number
+        of unforeseen contingencies. As a result, the following facts prompted me to
+        learn more and investigate how the crashes have decreased over time. As a
+        responsible resident, I also need to educate myself on road accident data and
+        patterns as they develop and evolve. Therefore, I decided to conduct a study
+        on the frequency of road crashes in order to learn more about the elements
+        and places that contribute to these collisions.</p>
+
+    <h6 style=" text-align: left;
+        margin-left: 300px;
+        color: #495950;
+        font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        font-size: 35px;">User Guide</h6>
+    <ul style="top: 150px; bottom: 50px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+        <li>
+            Hover over the map to view the geographical location of each Canberra suburb.
+        </li>
+        <li>
+            Hover over the Line Graph to view the trend in the number of accidents in each Canberra suburb.
+        </li>
+        <li>
+            The map and line graphs are interactive and change according to user inputs.
+        </li>
+        <li>
+            Both visualisations change according to the selection of the suburb of the drop-down menu.
+        </li>
+        <li>
+            The line graph also changes according to the selection of the location on the map.
+        </li>
+
+    
+
+    </ul>
+
+
+    <div id="container" style="display: flex;">
+        <div style="width: 50%; ">
+            <div id="svganchor"></div>
+        </div>
+        <div style="width: 50%; ">
+            <!-- Initialize a select button -->
+            <select id="selectButton"></select>
+            <!-- Create a div where the graph will take place -->
+            <div id="line_graph"></div>
+        </div>
+    </div>
+
+
+
+    <p style="top: 450px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+
+        The map above depicts the geographical location of ACT where the size of the bubbles represents the number of
+        accidents in each suburb. When the interactivity feature on the map is used, the line graph changes
+        correspondingly. The line graph indicates a lower trend in the frequency of automobile accidents in nearly every
+        suburb over the last decade. Previously, a little increase and drop in accident numbers were reported for the
+        areas. In recent years, the reduction has been attributed to the 2020 pandemic, which led to lockdowns and
+        reduced travel. The dataset is made up of incomplete data for the year 2021, resulting in a relatively low
+        number of traffic accidents.
+    </p>
+
+
+    <hr style="margin-left: 100px; margin-right: 100px; stroke-width: 20px;">
+    <hr style="margin-left: 100px; margin-right: 100px; stroke-width: 20px;">
+
+    <h6 style=" text-align: left;
+        margin-left: 300px;
+        color: #495950;
+        font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        font-size: 35px;">User Guide</h6>
+    <ul style="top: 150px; bottom: 50px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+
+       <li>
+            Hover over the Heat Map to view an hourly breakdown of the frequency of Canberra road accidents.
+       </li> 
+       <li>
+            Hover over the Sankey Chart to see how catastrophic the accidents were in the suburbs under different circumstances.
+       </li>
+        <li>
+            The heat map (on left) and sankey digram (right) are interactive and changes according to user inputs.
+        </li>
+        <li>
+            The user can choose different year ranging from 2012 to 2020 from the slider input and both the graphs
+            change accordingly.
+        </li>
+        <li>
+            The user can choose only one suburb location from the drop down menu and both the graphs change accordingly.
+        </li>
+        <li>
+            The last user input only works for the sankey diagram which shows the crash severity (on left) and different
+            conditions chosen from the radio buttons (on right).
+        </li>
+    </ul>
+
+
+
+    <!--user input-->
+    <div id="container" style="display: flex; margin-left: 150px; margin-right: 150px;">
+        <div class="center">
+            <p style="color: #507e65;">Select Year:</p>
+            <input type="range" min="2012" max="2020" value="1" class="slider" id="myRange">
+            <p style="color: #c63d44;"><span id="demo"></span></p>
+        </div>
+        <hr>
+        <div class="center">
+            <p style="color: #507e65;">Select Suburb:</p>
+            <!-- Initialize a select button -->
+            <select id="selectButton2"></select>
+        </div>
+
+        <hr>
+        <div style="width: 75%;" class="center">
+            <p style="color: #507e65;"> Select Conditions:</p>
+            <input type="radio" id="LIGHTING_CONDITION" name="feature" value="LIGHTING_CONDITION" checked>
+            <label for="LIGHTING_CONDITION">LIGHTING CONDITION</label><br>
+            <input type="radio" id="WEATHER_CONDITION" name="feature" value="WEATHER_CONDITION">
+            <label for="WEATHER_CONDITION">WEATHER CONDITION</label><br>
+            <input type="radio" id="ROAD_CONDITION" name="feature" value="ROAD_CONDITION,">
+            <label for="ROAD_CONDITION">ROAD CONDITION</label>
+        </div>
+    </div>
+
+
+
+
+    <div id="container" style="display: flex; margin-left: 100px; margin-right: 100px;">
+
+        <!--Heatmap-->
+        <div style="width: 40%; ">
+            <!-- Create a div where the graph will take place -->
+            <div id="heatmap_graph"></div>
+        </div>
+        <div style="width: 20%; ">
+            <!-- Create a div where the graph will take place -->
+        </div>
+        <!--sankey Diagram-->
+        <div style="width: 40%; ">
+            <!-- Create a div where the graph will take place -->
+            <div id="sankey_graph"></div>
+        </div>
+
+    </div>
+
+    <p style="top: 450px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+        According to the heat map, regardless of the year, the accidents that happened had a greater impact on the
+        property than physical injuries in virtually all places. Oonly a few suburbs have deadly collision severity. The
+        heat map also shows that traffic accidents are more common during working hours. Peaking at 8:00
+        AM, falling slightly throughout the day, peaking again around 5:00 PM, and then reducing. Essentially, accidents
+        are at their lowest in Canberra around 12:00 AM and 5:00 AM. The Sankey diagram illustrates the flow of a
+        process, including all possible circumstances under which accidents might occur, along with the severity of the
+        crash. The bigger the amount of energy involved, the thicker the line or arrow.
+    </p>
+
+    <hr style="margin-left: 100px; margin-right: 100px; stroke-width: 20px;">
+    <hr style="margin-left: 100px; margin-right: 100px; stroke-width: 20px;">
+
+    <h2 style=" text-align: left;
+    margin-left: 100px;
+    color: #507e65;
+    font-weight: bold;
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 35px;">Conclusion</h2>
+    <p style="top: 450px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+        We can observe how the number of accidents for each suburb has decreased over time unit the
+        pandemic hit in the year 2020. Furthermore, the interactive chloropeth map outlines all of the geographical
+        locations of road crashes and accident hotspots. It also suggests that none of the extreme weather conditions
+        played a significant effect in Canberra road crashes since the roads are dry and the weather is pleasant all
+        through the day.
+    </p>
+    <p style="top: 450px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+        Contrary to the belief that night driving leads to road accidents, it was observed that most accidents happen
+        during the day and on good surface roads as none of the extreme weather conditions plays a significant influence
+        on Canberra road crashes even when the weather is fine during the day. The heat-map shows that the highest
+        number of accidents occur during the office hustle, when people rush to go or depart from work, particularly in
+        the city, where the most businesses are centred.
+    </p>
+    <p style="top: 450px; margin-left: 100px; margin-right: 100px; text-align: justify;">
+        Finally, to conclude, it's worth emphasising that the government is doing its job effectively by enforcing
+        strict road safety laws and regulations, which has led to a substantial decrease in the general trend of
+        accidents from 2012 to 2021 keeping the people in Canberra safe.
+    </p>
+    <hr>
+    <footer style="height: 100px; text-align: center; background: #FDD2B5;">
+        <p style="text-align: center;">&copy; Copyright Prachi Jaiswal. Student ID: 32192673. 2022</p>
+    </footer>
+    <script type="text/javascript">
+        var slider = document.getElementById("myRange");
+        var output = document.getElementById("demo");
+        output.innerHTML = slider.value;
+
+
+        var selectedLocation = "RURAL - MOLONGLO VALLEY";
+        var selectedFeature = "LIGHTING_CONDITION";
+        var selectedYear = "2012";
+        d3.csv('https://raw.githubusercontent.com/pjai0005/ACT-Road-Accident-Data/main/ACT_Road_Crash_Data.csv', function (err, RoadCrashData) {
+            var subAcc = d3.nest()
+                .key(function (d) {
+                    return d["SUBURB_LOCATION"];
+                })
+                .rollup(function (leaves) {
+                    return {
+                        length: leaves.length,
+                        lon: leaves[0].LONGITUDE,
+                        lat: leaves[0].LATITUDE
+                    };
+                })
+                .entries(RoadCrashData);
+
+            // add the options to the button
+            d3.select("#selectButton")
+                .selectAll('myOptions')
+                .data(subAcc)
+                .enter()
+                .append('option')
+                .text(function (d) {
+                    return d.key;
+                }) // text showed in the menu
+                .attr("value", function (d) {
+                    return d.key;
+                }) // corresponding value returned by the button
+            // add the options to the button
+            d3.select("#selectButton2")
+                .selectAll('myOptions')
+                .data(subAcc)
+                .enter()
+                .append('option')
+                .text(function (d) {
+                    return d.key;
+                }) // text showed in the menu
+                .attr("value", function (d) {
+                    return d.key;
+                }) // corresponding value returned by the button
+
+            DrawMap(subAcc);
+            DrawLineGraph("RURAL - MOLONGLO VALLEY", RoadCrashData);
+            DrawHeatMap(selectedLocation, RoadCrashData, selectedYear);
+            DrawsankeyGraph(selectedLocation, RoadCrashData, selectedFeature, selectedYear);
+            //DrawHeatMap();
+            // When the button is changed, run the updateChart function
+            d3.select("#selectButton").on("change", function (d) {
+                // recover the option that has been chosen
+                var selectedOption = d3.select(this).property("value")
+
+                d3.selectAll("circle").style("fill", "#DB6557");
+                d3.select("#" + selectedOption.replace(/ /g, '')).style("fill", "blue");
+                DrawLineGraph(selectedOption, RoadCrashData)
+            })
+            d3.select("#selectButton2").on("change", function (d) {
+                // recover the option that has been chosen
+                selectedLocation = d3.select(this).property("value")
+                DrawHeatMap(selectedLocation, RoadCrashData, selectedYear)
+                DrawsankeyGraph(selectedLocation, RoadCrashData, selectedFeature, selectedYear);
+            });
+            slider.oninput = function () {
+                output.innerHTML = this.value;
+                selectedYear = this.value;
+                DrawHeatMap(selectedLocation, RoadCrashData, selectedYear)
+                DrawsankeyGraph(selectedLocation, RoadCrashData, selectedFeature, selectedYear);
+            }
+            d3.selectAll("input[name='feature']").on("change", function () {
+                selectedFeature = this.value;
+                DrawsankeyGraph(selectedLocation, RoadCrashData, selectedFeature, selectedYear);
+            });
+
+        });
+
+        function LineGraphUpdate(selectedOption) {
+            d3.csv('https://raw.githubusercontent.com/pjai0005/ACT-Road-Accident-Data/main/ACT_Road_Crash_Data.csv', function (err, RoadCrashData) {
+                DrawLineGraph(selectedOption, RoadCrashData);
+            });
+        }
+
+        function DrawLineGraph(selectedOption, data) {
+            const select = document.getElementById('selectButton');
+            // set select value
+            select.value = selectedOption;
+            // run the updateChart function with this selected option
+            var dataFilter = data.filter(function (d) {
+                return d["SUBURB_LOCATION"] == selectedOption
+            })
+
+            dataFilter.forEach(d => {
+                d.year = d3.timeParse("%d/%m/%Y")(d.CRASH_DATE).getFullYear();
+            });
+            var yearwise = d3.nest()
+                .key(function (d) {
+                    return d["year"];
+                })
+                .rollup(function (leaves) {
+                    return leaves.length;
+                })
+                .entries(dataFilter);
+            yearwise.sort(function (x, y) {
+                return d3.ascending(x.key, y.key);
+            });
+
+            DrawLine(yearwise);
+        }
+
+        function DrawHeatMap(selectedOption, data, year) {
+            // run the updateChart function with this selected option
+            data.forEach(d => {
+                d.year = d3.timeParse("%d/%m/%Y")(d.CRASH_DATE).getFullYear();
+            });
+            var dataFilter = data.filter(function (d) {
+                return (d["SUBURB_LOCATION"] == selectedOption && d["year"] == year)
+            })
+            console.log(dataFilter)
+            var parser = d3.timeParse("%H:%M");
+            dataFilter.forEach(d => {
+                d.hour = d3.timeParse("%H:%M")(d.CRASH_TIME).getHours();
+            });
+            var nestedData = d3.nest()
+                .key(function (d) {
+                    return d["hour"];
+                })
+                .key(function (d) {
+                    return d["CRASH_SEVERITY"];
+                })
+                .rollup(function (leaves) {
+                    return leaves.length;
+                })
+                .entries(dataFilter);
+
+            const flattenData = nestedData.flatMap((item, i) => {
+                const hour = item.key;
+                return item.values.map(crash => ({
+                    hour: hour,
+                    CRASH_SEVERITY: crash.key,
+                    value: crash.value
+                }));
+            });
+            flattenData.sort(function (x, y) {
+                return d3.ascending(+x.hour, +y.hour);
+            });
+
+            HeatMap(flattenData);
+        }
+
+        function DrawsankeyGraph(selectedOption, data, option, year) {
+            data.forEach(d => {
+                d.year = d3.timeParse("%d/%m/%Y")(d.CRASH_DATE).getFullYear();
+            });
+            // run the updateChart function with this selected option
+            var dataFilter = data.filter(function (d) {
+                return (d["SUBURB_LOCATION"] == selectedOption && d["year"] == year)
+            });
+
+            var nestedData = d3.nest()
+                .key(function (d) {
+                    return d["CRASH_SEVERITY"];
+                })
+                .key(function (d) {
+                    return d[option];
+                })
+                .rollup(function (leaves) {
+                    return leaves.length;
+                })
+                .entries(dataFilter);
+
+            const flattenData = nestedData.flatMap((item, i) => {
+                const crashSeverity = item.key;
+                return item.values.map(crash => ({
+                    CRASH_SEVERITY: crashSeverity,
+                    option: crash.key,
+                    value: crash.value
+                }));
+            });
+
+            var option_keys = d3.map(data, function (d) {
+                return d[option];
+            }).keys()
+            var crash_keys = d3.map(data, function (d) {
+                return d.CRASH_SEVERITY;
+            }).keys()
+            var nodes = [];
+            var links = [];
+            var i = 0;
+            crash_keys.forEach(d => {
+                nodes.push({
+                    "node": i,
+                    "name": d
+                });
+                i++
+            });
+            option_keys.forEach(d => {
+                nodes.push({
+                    "node": i,
+                    "name": d
+                });
+                i++
+            });
+
+            var map = d3.map(nodes, function (d) {
+                return d.name;
+            });
+            nestedData.forEach(d => {
+                d.values.forEach(e => {
+                    links.push({
+                        "source": map.get(d.key).node,
+                        "target": map.get(e.key).node,
+                        "value": e.value
+                    });
+                })
+            });
+            sankey({
+                "nodes": nodes,
+                "links": links
+            });
+        }
+    </script>
+</body>
+
+</html>

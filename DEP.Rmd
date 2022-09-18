@@ -1,0 +1,437 @@
+---
+title: "FIT5147 Data Exploration Project"
+author: "Student Name: Prachi Jaiswal <br> Student ID: 32192673"
+date: '`r Sys.Date()`'
+output:
+    bookdown::html_document2:
+        base_format: prettydoc::html_pretty
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+# loading libraries
+
+library(prettydoc)
+library(ggplot2)
+library(plotly)
+library(tidyverse)
+library(tidyr)
+library(DataExplorer)
+library(forecast)
+library(lubridate)
+library(naniar)
+library(dplyr)
+library(RColorBrewer)
+library(kableExtra)
+library(networkD3)
+library(leaflet)
+library(maps)
+library(ggthemes)
+library(dygraphs)
+library(xts) 
+library(ggpubr)
+library(ggridges)
+library(viridis)
+library(hrbrthemes)
+library(viridis)
+
+# loading data
+raw_data <- read_csv("data/ACT_Road_Crash_Data.csv")
+```
+
+
+# . Introduction
+In in a country as vast as Australia, driving is an essential part of life. Driving here is not a luxury but a necessity. The number of individuals killed or wounded in road accidents in Australia was always a concern for which the government imposed a set of strict road safety rules and regulations. Due to such directives, the road accidents have seen quite a noticeable fall in the numbers of unforeseen contingencies. As a result, the following facts prompted me to learn more and investigate how the crashes have decreased over time. As a responsible resident, I also need to educated myself on road accident data and patterns as they develop and evolve. Therefore, I decided to conduct a study on the frequency of road crashes in order to learn more about the elements and places that contribute to these collisions.
+
+# . Data Description
+The dataset has been downloaded from ATC Government Open Data Portal subcategorised as [ACT Road Crash Data](https://www.data.act.gov.au/Transport/ACT-Road-Crash-Data/6jn4- m8rx). With `r nrow(raw_data)` rows and `r ncol(raw_data)` columns, the following data consists of both tabular and geographic details. It contains the latitude and longitude points of traffic incidents documented in the Australian Capital Territory from 2012 to 2021. The police or the general public have entered these into the "AFP Crash Report Form." This dataset only includes crashes reported through the "AFP Crash Report Form"; any other accidents are not included ("ACT Road Crash Data", 202, para.1).
+
+# . Data Wrangling
+When it comes to data analysis, your results are only as good as your data (What Is Data Wrangling & Why Is It Necessary?, 2021). And to report accurate results, the data must me cleaned. Likewise, below is the table that shows the raw data which will be converted to a desired dataset for the analysis. 
+
+| Column Name        | Description
+---------------------|----------------------------------------------------
+| CRASH_ID           | ID number of crash
+| CRASH_DATE         | Date of crash
+| CRASH_TIME         | Time of crash
+| SUBURB_LOCATION    | Suburb where the crash occurred
+| LONGITUDE          | Longitude coordinate of crash
+| LATITUDE           | Latitude coordinate of crash
+| INTERSECTION       | Whether the crash occurred in intersection
+| MIDBLOCK           | If the crash occurred was in mid-block
+| CRASH_DIRECTION    | Direction of travel at location of crash
+| CRASH_SEVERITY     | Level of crash severity 
+| LIGHTING_CONDITION | Lighting condition during the crash
+| ROAD_CONDITION     | Road condition during the crash
+| WEATHER_CONDITION  | Weather condition during the crash
+| Location           | Spatial values of the crash
+
+
+```{r}
+
+data <- subset( raw_data, 
+                select = -c(CRASH_ID, INTERSECTION, MIDBLOCK, 
+                            CRASH_DIRECTION, Location)) %>% 
+  separate("CRASH_DATE", c("Day", "Month", "Year"), sep = "/")%>% 
+  separate("CRASH_TIME", c("Hour", "Minute", "Sec"), sep = ":")%>%
+  mutate(Day = as.integer(Day),
+         Month = as.integer(Month),
+         Year = as.integer(Year),
+         Hour = as.integer(Hour),
+         Minute = as.integer(Minute),
+         Sec = as.integer(Sec)) 
+
+
+```
+
+Few columns from the original dataset were removed and underwent an some cleaning for a better and accurate analysis. For example, columns like Crash Date and Crash Time were broken down into different columns and their datatype was also changed.
+
+## Data Dimension
+```{r}
+plot_intro(data, title = "Dimension of Data",
+           ggtheme = theme_bw(), theme_config = list())
+```
+
+The graph above provides basic facts and figures about discrete columns, continuous columns, total number of null values, and missing observations. The data set has a large number of continuous columns, along with 38% of discrete variables present in the data. 
+
+## Missing Values
+```{r}
+plot_missing(data, title = "Missing Values in Data",
+             ggtheme = theme_bw(), theme_config = list())
+```
+
+The data is almost filled with values except it consists of a few missing details for column Suburb_Location. The column has `r sum(is.na(data))` missing values. 
+
+## Duplicate Values
+>> The data is almost filled with values except it consists of a few missing details for column Suburb_Location. The column has `r sum(is.na(data))` missing values. 
+
+
+# . Data Exploration
+
+## . An examination of road crash severity contributing to car accidents in ACT. 
+
+### . Accdidents timeline from 2012 to 2021.
+
+```{r, line}
+# line graph
+line <- data %>%
+  group_by(Year)%>%
+  count(Year) %>% 
+  rename("Sum" = "n") 
+  
+
+line_up <- line %>%  filter(Sum <= mean(line$Sum))
+line_down <- line %>%  filter(Sum > mean(line$Sum)) #7183
+
+ggplot(line, aes(x= Year, y= Sum))+ 
+   geom_col(data = line_down, fill="pink")+
+   geom_col(data = line_up, fill="light green")+
+   geom_point(data = line_down, size=2.5, shape=16, 
+              fill="dark red")+
+   geom_point(data = line_up, size=2.5, shape=16, 
+              fill="dark green")+
+  
+   geom_line(aes(x= Year, y = Sum), 
+             size = 1, group = 1)+
+   geom_hline(aes(yintercept = mean(line$Sum)), color="blue")+
+   geom_label(aes(label = Sum), nudge_x = -0.5, nudge_y = -0.5, check_overlap = TRUE)+
+   scale_x_continuous(breaks = seq(2012, 2021, by = 1)) +
+  
+  theme_bw()+
+  labs(y = "Number of accidents",
+       title = "Overview of Road Accidents in ACT",
+       subtitle = "from 2012 to 2021",
+       caption = "Data source: ACT Road Crash ")
+
+```
+
+The above chart indicates that during the earlier years, there is an increase and decrease in numbers but without much significant difference. But towards the recent years, the green lines indicate a decline in numbers. this is because of the pandemic in 2020 resulting in lesser traffic itself. (Write about lack of data which is why even 2021 is green).
+
+```{r}
+
+data$Date = as.Date(paste(data$Year, data$Month, 01), "%Y %m %d")
+
+line <- data %>% 
+  group_by(Date)%>%
+  count(Date) %>% 
+  rename("Accidents" = "n") %>% 
+  select(Date, Accidents) 
+
+crash = xts( x = line [,-1], order.by= line$Date)
+dygraph(crash, main = "Patterns in Road Accidents through the years")%>%
+  dyAxis("y", label = "Number of Accidents") %>%
+  dyAxis("x", label = "From Jan 2012 to JUL 2021") %>%
+  dyOptions(fillGraph=TRUE)%>%
+  dyRangeSelector() %>%
+  dyCrosshair(direction = "vertical") %>%
+  dyHighlight(highlightCircleSize = 5, 
+              highlightSeriesBackgroundAlpha = 0.2, 
+              hideOnMouseOut = FALSE)  %>%
+  dyRoller(rollPeriod = 1)
+
+```
+In this series graph plot, we can observe that there is a trend of peaks during May or the rainy season. 
+There is also a series of troughs that can be observed every January, because that is around the holiday season. 
+There is a sudden drop in numbers during Jan 2020, due to the pandemic. This could be because of the lockdowns and a general drop in traffic on the road during those times. But in 2021, as the rules for the lockdown has relaxed and traffic increased on the roads, the number of accidents started to rise again.  
+
+### . Accidents Severity
+
+```{r, sankey}
+# sankey
+
+san <- data %>%
+  group_by(WEATHER_CONDITION, CRASH_SEVERITY) %>%
+  summarise(value = n())%>%
+  pivot_wider(names_from = CRASH_SEVERITY,
+              values_from = value) %>% 
+  rename("Damage" = "Property Damage Only") %>% 
+  pivot_longer(cols = -WEATHER_CONDITION,
+               names_to = "target",
+               values_to = "value")  
+
+node <- data.frame(name=c(as.character(san$WEATHER_CONDITION), 
+        as.character(san$target)) %>% unique())
+
+san$IDmonth <- match(san$WEATHER_CONDITION, node$name)-1 
+san$IDtarget <- match(san$target, node$name)-1 
+ 
+p <- sankeyNetwork(Links = san, Nodes = node, Source = "IDmonth", 
+               Target = "IDtarget", Value = "value", NodeID = "name", fontSize = 14, 
+               nodeWidth = 20, nodePadding = 15, sinksRight = FALSE)
+sankey <- htmlwidgets::prependContent(p, htmltools::tags$h4("Analysis of Accident Severity and Weather Conditions"), 
+                                      htmltools::tags$h6("Weather Conditions(left) and Accident Severity (Right) "))
+sankey 
+```
+
+The Sankey plot explores the weather conditions and the relative consequences for road accidents.Fine weather seems to be the widest parameter and during this time, it resulted mostly in property damages.A large part of property Damages also occurred during rainy weather. Injuries mostly occurred during fine weather barring the few that occurred during rainy or snowy weather. But fatalities mostly occurred due to rainy weather light or heavy. From the previous graph it was evident that the accident trends indicate that rainy weather had the highest numbers. 
+
+## . Identifying the most accident-prone suburbs/areas, as well as the factors/conditions that contributing to the collisions.
+
+### . Accident-prone Suburbs
+
+```{r, map}
+#map
+
+acc_map <- data %>% 
+  group_by(SUBURB_LOCATION)%>%
+  count(SUBURB_LOCATION) %>% 
+  rename("Accidents" = "n") %>% 
+  left_join(data, by= "SUBURB_LOCATION") %>% 
+  select(SUBURB_LOCATION, Accidents, LATITUDE, LONGITUDE) %>% 
+  summarise(Accidents = mean(Accidents),
+            lat = mean(LATITUDE),
+            lon = mean(LONGITUDE))
+
+
+  
+mypalette <- colorBin( palette="OrRd", domain=acc_map$Accidents, 
+                       na.color="transparent", bins=seq(0, 3000, by=500))
+mytext <- paste(
+   "Accidents: ", acc_map$Accidents, "<br/>", 
+   "Location: ", acc_map$SUBURB_LOCATION) %>%
+  lapply(htmltools::HTML)
+m <- leaflet(acc_map) %>% 
+  addTiles()  %>% 
+  addProviderTiles("CartoDB.DarkMatter") %>%
+  addCircleMarkers(~lon, ~lat,  
+    fillColor = ~mypalette(Accidents), fillOpacity = 0.7, color="white", radius= sqrt(acc_map$Accidents)/5, stroke=FALSE,
+    label = mytext,
+    labelOptions = labelOptions( style = list("font-weight" = "normal", 
+                                              padding = "3px 8px"), textsize = "13px", direction = "auto")) %>%
+  leaflet::addLegend( pal=mypalette, values=~Accidents, opacity=0.9, 
+             title = "Number of Accidents", position = "bottomright" )
+
+m
+
+```
+
+
+
+### . Factors that contribute to collisions
+
+```{r, eval=FALSE}
+#light
+light <- data %>% 
+  group_by(LIGHTING_CONDITION, CRASH_SEVERITY)%>%
+  count(LIGHTING_CONDITION)%>%
+  rename("Accidents" = "n") %>% 
+  ggplot(aes(y= LIGHTING_CONDITION, x= CRASH_SEVERITY, fill= Accidents)) + 
+  geom_tile()+
+  scale_fill_gradient(low="light blue", high="red")+
+  theme(axis.text.x = element_text(angle=40, hjust=1))+
+  theme_bw()+
+  labs(y = " ", x= "Crash Severity")+
+  theme(axis.text.x = element_text(angle = 45))
+
+#road
+road <- data %>% 
+  group_by(ROAD_CONDITION, CRASH_SEVERITY)%>%
+  count(ROAD_CONDITION)%>%
+  rename("Accidents" = "n") %>% 
+  
+  ggplot(aes(y= ROAD_CONDITION, x= CRASH_SEVERITY, fill= Accidents)) + 
+  geom_tile()+
+  scale_fill_gradient(low="light blue", high="red")+
+  theme(axis.text.x = element_text(angle=40, hjust=1))+
+  theme_bw()+
+  labs(y = " ", x= "Crash Severity")+
+  theme(axis.text.x = element_text(angle = 45))
+
+#weather
+weather <- data %>% 
+  group_by(WEATHER_CONDITION, CRASH_SEVERITY)%>%
+  count(WEATHER_CONDITION)%>%
+  rename("Accidents" = "n") %>% 
+  
+  ggplot(aes(y= WEATHER_CONDITION, x= CRASH_SEVERITY, fill= Accidents)) + 
+  geom_tile()+
+  scale_fill_gradient(low="light blue", high="red")+
+  theme(axis.text.x = element_text(angle=40, hjust=1))+
+  theme_bw()+
+  labs(y = " ", x= "Crash Severity")+
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+
+
+
+```{r}
+#tiles
+condition <- data %>% 
+ group_by(LIGHTING_CONDITION, ROAD_CONDITION)%>%
+  summarise(n = n())%>%
+  rename("Accidents" = "n")
+  
+  ggplot(condition, aes(x= ROAD_CONDITION, y= LIGHTING_CONDITION, fill= Accidents)) + 
+  geom_tile()+
+  #scale_fill_viridis(discrete=FALSE) +
+    scale_fill_distiller(palette = "RdPu")+
+  theme_ipsum()+
+  # scale_fill_gradient(low="light blue", high="red")+
+  theme(axis.text.x = element_text(angle=40, hjust=1))+
+  theme_bw()+
+  labs(y = "Light Conditions", x= "Road Conditions")+
+  theme(axis.text.x = element_text(angle = 90))
+
+# ggarrange(light, road, weather , 
+#           labels = c("Light", "Road", "Weather"),
+#           ncol = 2, nrow = 2)
+
+```
+Most accidents occur in broad daylight. meaning that the external loghting conditions do not play a major role in the number of accidents. 
+
+
+
+## . What time of the day affect the frequency of accidents and how they have changed in the years?
+
+```{r, eval = FALSE}
+# heat map
+
+heat <- data %>% 
+  group_by(Hour, Month)%>%
+  count(Month)%>%
+  rename("Number of road accidents" = "n")
+
+  
+ggplotly(ggplot(heat, aes(y= Month, x= Hour, fill= `Number of road accidents`)) + 
+  geom_tile()+
+  scale_fill_gradient(low="light blue", high="red")+
+  theme(axis.text.x = element_text(angle=40, hjust=1))+
+   theme_bw()+
+
+labs(title = "Frequency of road accidents",
+     subtitle = "Compring hours and months",
+     caption = "Data source: ACT: Road Crash Data"))
+
+```
+```{r, ridges, eval=FALSE}
+#ridges
+ridges <- data %>% 
+  group_by(Hour)%>%
+  count(Hour)%>%
+  rename("Number of road accidents" = "n")
+
+
+ggplot(data, aes(y = as.factor(Hour), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.10) +
+  scale_fill_viridis(name = "Temp. [F]", option = "C") +
+  labs(title = 'Frequency of road accidents in a day') +
+  theme_ipsum() +
+  theme(legend.position="none",
+        panel.spacing = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 8))
+
+
+# ggplot(lincoln_weather, aes(x = `Mean Temperature [F]`, y = as.factor(`Month`), fill = ..x..)) +
+#   geom_density_ridges_gradient(scale = 3, rel_min_height = 0.10) +
+#   scale_fill_viridis(name = "Temp. [F]", option = "C") +
+#   labs(title = 'Temperatures in Lincoln NE in 2016') +
+#   theme_ipsum() +
+#     theme(
+#       legend.position="none",
+#       panel.spacing = unit(0.1, "lines"),
+#       strip.text.x = element_text(size = 8)
+#     )
+# 
+# 
+# data %>%
+#   ggplot( aes(x=as.factor(Hour))) +
+#     geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8)
+
+```
+
+```{r, lolipop}
+# lolipop
+
+
+ggplotly(data %>% 
+  group_by(Hour)%>%
+  count(Hour)%>%
+  rename("Accidents" = "n") %>%
+  ggplot() +
+  geom_segment( aes(x=Hour, xend=Hour, 
+                    y=Accidents, yend=0), 
+                color="Black") +
+  
+  geom_point( aes(x=Hour, y=Accidents), 
+              color="#FF8C00", size=3)+
+  theme_bw()+
+    scale_x_continuous(breaks = seq(0, 23, by = 1)) +
+  theme(legend.position="top",
+          plot.title = element_text(size=16),
+          axis.title.x = element_text(size=12)) +
+  labs(x = "Hour", y= "Number of Accidents",
+       title = "Frequency of road accidents in a day"))
+```
+It is obvious that the road accidents during the day are higher during the office hours. Peaking at 8:00 AM, dropping a little during the rest of the day and peaking again at 5:00 PM and declining. The accidents are the lowest between the between 12:00 AM and 5:00 AM. 
+
+# . Conclusion
+
+- Over the years there was not much noterworthy differences in the number of accidents. 
+- Accidents occur even when the weather is fine meaning though most occur during the rainy season. More severe concequences (beyind property damage)occur during the rainy season. 
+-during the day accidnets are higher during office hours. 
+- contrary to the beleif that night driving leads to rad accidents it was observed that most accidents happen during the day and on good surface roads. 
+
+# . Reference
+
+1. Road Safety. Retrieved 7 August 2021, https://www.infrastructure.gov.au/roads/safety/
+
+2. Connelly, & Supangan. (2016, November 6). Science Science Direct. Retrieved March 20, 2022,
+https://www.sciencedirect.com/science/article/abs/pii/S0001457506000649
+
+3. ACT Road Crash Data. (2021). Retrieved 10 August 2021, from
+https://www.data.act.gov.au/Transport/ACT-Road-Crash-Data/6jn4-m8rx
+
+4. Car Accident Statistics 2020 | Car Research & Statistics — Budget DirectTM. (2020). Retrieved 7
+August 2021, from https://www.budgetdirect.com.au/car-insurance/research/car-accident-
+statistics.html
+
+5. plot_intro function - RDocumentation. (2022). Retrieved 12 April 2022, from https://www.rdocumentation.org/packages/DataExplorer/versions/0.8.2/topics/plot_intro
+
+6. What Is Data Wrangling & Why Is It Necessary? (2021, May 14). MonkeyLearn Blog. https://monkeylearn.com/blog/data-wrangling/
+
+7. GGPLOT Point Shapes Best Tips - Datanovia. (2022). Retrieved 14 April 2022, from https://www.datanovia.com/en/blog/ggplot-point-shapes-best-tips/
+
+8. Holtz, Y. (2022). Interactive area chart with R and plotly. Retrieved 14 April 2022, from https://r-graph-gallery.com/163-interactive-area-chart-plotly.html
